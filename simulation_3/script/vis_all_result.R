@@ -13,7 +13,7 @@ result$method[which(result$method == "mrbs.svc")] <- "Ours(CV)"
 result$method[which(result$method == "GWR.GWmod")] <- "GWR"
 result$method[which(result$method == "MLE.profile.pc")] <- "MLE"
 result <- rbind(result, result_aic, result_bic)
-result$method <- factor(result$method, levels = c("Ours(CV)", "Ours(BIC)", "Ours(AIC)", "GWR" ,"ESF", "MLE"))
+result$method <- factor(result$method, levels = c("Ours(AIC)", "Ours(BIC)", "Ours(CV)", "GWR" ,"ESF", "MLE"))
 
 
 library(ggplot2)
@@ -25,7 +25,7 @@ p <-  ggplot(df, aes(x=method, y=RMSE, fill = method)) +
     xlab("") +
     ylab("") +
     coord_cartesian(ylim=c(0,0.85)) +
-    scale_x_discrete(labels = c("Ours(CV)", "Ours(BIC)", "Ours(AIC)", "GWR", "ESF", "MLE")) +
+    scale_x_discrete(labels = c("Ours(AIC)", "Ours(BIC)", "Ours(CV)", "GWR", "ESF", "MLE")) +
     scale_fill_manual(name = "",values=c("white","white","white", "grey50", "grey30", "black")) +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(), 
@@ -55,7 +55,7 @@ for(i in 1:10){
         xlab("") +
         ylab("") +
         coord_cartesian(ylim=c(0,0.85)) +
-        scale_x_discrete(labels = c("Ours(CV)", "Ours(BIC)", "Ours(AIC)", "GWR", "ESF", "MLE")) +
+        scale_x_discrete(labels = c("Ours(AIC)", "Ours(BIC)", "Ours(CV)", "GWR", "ESF", "MLE")) +
         scale_fill_manual(name = "",values=c("white","white","white", "grey50", "grey30", "black")) +
         theme(panel.grid.major = element_blank(), 
               panel.grid.minor = element_blank(), 

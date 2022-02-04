@@ -91,7 +91,7 @@ for(i in 1:length(name_vt)){
     data_long <- gather(data_wide, method, value)
     
     data_long$method <- as.factor(data_long$method)
-    data_long$method <- factor(data_long$method, levels = c("Ours(BIC)", "Ours(AIC)", "GGWR"))
+    data_long$method <- factor(data_long$method, levels = c("Ours(AIC)","Ours(BIC)",  "GGWR"))
     
     data_long$name <- name_vt[i]
     
@@ -101,7 +101,7 @@ for(i in 1:length(name_vt)){
         ylab("") +
         # ylim(c(0,0.6)) +
         ylim(c(0.1,0.3)) +
-        scale_x_discrete(labels = c("Ours(BIC)", "Ours(AIC)", "GGWR")) +
+        scale_x_discrete(labels = c("Ours(AIC)","Ours(BIC)",  "GGWR")) +
         scale_fill_manual(name = "",values=c("white", "white", "black")) +
         theme(panel.grid.major = element_blank(), 
               panel.grid.minor = element_blank(),

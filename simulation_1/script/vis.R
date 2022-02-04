@@ -3,7 +3,8 @@ library(ggplot2)
 # 2 Visualization of result ----
 # Load data ----
 setwd("~/Documents/3_Research/201810_GWR/script/1_simulation/simulation_1")
-load(file = "result.RData")
+# load(file = "100timesresult.RData")
+load(file = "result_setseed0305.RData")
 
 load("~/Documents/3_Research/201810_GWR/script/1_simulation/simulation_1/script/our_aic.RData")
 pred_mbs_aic <- pred_mbs
