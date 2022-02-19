@@ -234,7 +234,43 @@ cv.lm_self_lmfit <- function (phi_for_cv,
     return(output)
 }
 
+# cv.glm_self_glmfit ----
+cv.glm_self_glmfit <- function (phi_for_cv, 
+                                Y_for_cv,
+                                k_can,
+                                k = 5,
+                                log_normal = FALSE, 
+                                max_cores = NULL){
+    
+    outlist = list()
 
+    for(i in 1:k){
+        
+        # fit = RcppEigen::fastLm(y = Y_for_cv[[i]][["train"]], X = phi_for_cv[[i]][["train"]])
+        fit = fastglm::fastglm(x = phi_for_cv[[i]][["train"]], y = Y_for_cv[[i]][["train"]])
+        XX = phi_for_cv[[i]][["test"]]
+        YY = Y_for_cv[[i]][["test"]]
+        mu = as.matrix(XX) %*% fit$coefficients
+        e = exp(mu)/(1+exp(mu))
+        
+        ent = -(YY*log(e) + (1-YY)*log(1-e))
+        
+        outlist[[i]] = list(cv_ent = mean(ent))
+    }
+
+    cv_results = outlist
+    output = list()
+    for (statistic in names(outlist[[1]])) {
+        vec = sapply(cv_results, function(cv_result) {
+            return(cv_result[[statistic]])
+        })
+        statistic_value = list(mean = mean(vec, na.rm = TRUE), 
+                               sd = sd(vec, na.rm = TRUE))
+        
+        output[[statistic]] = statistic_value
+    }
+    return(output)
+}
 # obtain phi_train(current k_can) from phi_train_full(M_up) ----
 # another way is to use compute.datamatrix(but time consuming)
 subset_phi <- function(phi_train_full, M_up, k_can, p_var){

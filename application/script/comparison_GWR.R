@@ -1,8 +1,8 @@
-
 rm(list=ls())
+mian_folder_path = "~/Documents/3_Research/201810_GWR/script"
+folder_path = paste0(mian_folder_path, "/application")
 
-folder_path = "~/Documents/SVCModels_2021/applicatin/script/"
-setwd(folder_path)
+setwd(paste0(folder_path,"/script"))
 
 source("datasets.R")
 source("utils.R")
@@ -11,25 +11,6 @@ source("evaluation.R")
 source("inference.R")
 
 data <- load_data(folder_path)
-
-# # 資料分析
-set.seed(10)
-number.data  <- nrow(data)*2/3
-number.test <- nrow(data)*1/3
-I <- sample(1:nrow(data), number.data)
-length(I)
-# training data
-data_attrb_train <- data[I, c(1,2,3,4)]
-data_space_train <- data[I, c(5,6)]
-# test data
-data_attrb_test  <- data[-I, c(1,2,3,4)]
-data_space_test <- data[-I, c(5,6)]
-
-start.time <- Sys.time()
-
-data_train <- SpatialPointsDataFrame(coords = data_space_train, data = data_attrb_train)
-data_test <- SpatialPointsDataFrame(coords = data_space_test, data = data_attrb_test)
-data_all <- rbind(data_train, data_test)
 
 library(GWmodel)
 GWmodel.fit <- function(data_train, data_all) {
@@ -55,44 +36,81 @@ GWmodel.fit <- function(data_train, data_all) {
                              dMat2 = dm.train)
 }
 
+cv_run <- function(i){
+#     set.seed(10)
+    set.seed(i)
+    # Data
+    data <- load_data(folder_path)
 
-# Normal
-# model = GWmodel.fit(data_train, data_test)
-# setwd("~/Documents/github-folder-name")
-# save(model, file = "GWR.RData")
+    number.data  <- round(nrow(data)*2/3,0)
+    number.test <- nrow(data) - number.data
+    
+    train_lable <- 1:number.data
+    test_lable <- (number.data + 1):(number.data + number.test)
+    
+    I <- sample(1:nrow(data), number.data)
 
-# setwd("~/Documents/github-folder-name")
-# load("GWR.RData")
-# print(RMSE(model$SDF@data$prediction, data_test@data$price_unit))
-# res = model$SDF@data$prediction - data_attrb_test$price_unit
-# sig = sqrt(sum((res)^2)/length(res))
-# print(sig)
-# print(mean(scoringRules::crps(data_attrb_test$price_unit, 
-#                         family = "normal", 
-#                         mean = model$SDF@data$prediction, 
-#                         sd = sig)))
+    # training data
+    data_attrb_train <- data[I, c(1,2,3,4)]
+    data_space_train <- data[I, c(5,6)]
+    # test data
+    data_attrb_test  <- data[-I, c(1,2,3,4)]
+    data_space_test <- data[-I, c(5,6)]
 
-
-
-
-# Log-Normal
-data_train$price_unit = log(data_train$price_unit)
-
-model = GWmodel.fit(data_train, data_all)
-setwd("~/Documents/github-folder-name")
-save(model, file = "GWR_logN.RData")
-
-# setwd("~/Documents/github-folder-name")
-# load(file = "GWR_logN.RData")
-res = model$SDF@data$prediction[1:19017] - data_train$price_unit
-sig = sqrt(sum((res)^2)/length(res))
-print(sig)
-print(RMSE(exp(model$SDF@data$prediction[19018:28526] + 0.5*sig), data_test@data$price_unit))
-print(mean(scoringRules::crps(data_test@data$price_unit, 
-                        family = "log-normal", 
-                        meanlog = model$SDF@data$prediction[19018:28526], 
-                        sdlog = sig)))
+    data_train <- SpatialPointsDataFrame(coords = data_space_train, data = data_attrb_train)
+    data_test <- SpatialPointsDataFrame(coords = data_space_test, data = data_attrb_test)
+    data_all <- rbind(data_train, data_test)
 
 
-# end.time <- Sys.time()
-# print(end.time - start.time)
+    # Normal
+    start.time <- Sys.time()
+
+
+    model = GWmodel.fit(data_train, data_all)
+    # save(model, file = paste0("GWR_",i,".RData"))
+
+    res = model$SDF@data$prediction[train_lable] - data_train$price_unit
+    sig = sqrt(sum((res)^2)/length(res))
+
+    RMSE_N <- RMSE(model$SDF@data$prediction[test_lable], data_test@data$price_unit)
+    CRPS_N <- mean(scoringRules::crps(data_test@data$price_unit, 
+                                      family = "normal", 
+                                      mean = model$SDF@data$prediction[test_lable],
+                                      sd = sig))
+
+    end.time <- Sys.time()
+    time_N <- end.time - start.time
+
+
+    # Log-Normal
+    start.time <- Sys.time()
+
+    data_train$price_unit = log(data_train$price_unit)
+    model = GWmodel.fit(data_train, data_all)
+    # save(model, file = paste0("GWR_logN_",i,".RData"))
+
+    res = model$SDF@data$prediction[train_lable] - data_train$price_unit
+    sig = sqrt(sum((res)^2)/length(res))
+    RMSE_LogN <- RMSE(exp(model$SDF@data$prediction[test_lable] + 0.5*sig), data_test@data$price_unit)
+    CRPS_LogN <- mean(scoringRules::crps(data_test@data$price_unit,
+                                         family = "log-normal", 
+                                         meanlog = model$SDF@data$prediction[test_lable], 
+                                         sdlog = sig))
+
+
+    end.time <- Sys.time()
+    time_LogN <- end.time - start.time
+    return(c(RMSE_N, CRPS_N, time_N, RMSE_LogN, CRPS_LogN, time_LogN))
+}
+
+rep_times <- 20
+result <- matrix(NA, rep_times, 6)
+# for(i in 1:rep_times){
+i = 10
+    print(i)
+    result[i, ] <- cv_run(i)
+#     print(result[1:i,])
+# }
+colnames(result) <- c("RMSE_N", "CRPS_N", "time_N", "RMSE_LogN", "CRPS_LogN", "time_LogN")
+setwd(paste0(folder_path,"/result/table4"))
+save(result, file = paste0("GWR_result_",i,"_times_sample.RData"))
